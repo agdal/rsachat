@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>SOP - RSA Kryptering</title>
+    <meta name="description" content="A minimalist, open-source, end-to-end RSA-2048 encrypted chat application.">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
+    <link href="/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/7f23abe7fc.js" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <div id="vue-instance">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">SOP - RSA</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarScroll" aria-controls="navbarScroll" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarScroll">
+            <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="#">Hjem</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarScrollingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Indstillinger
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                  <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#consoleModal">Console</a></li>
+                  <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#keyModal">Nøgler</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="#">Andet</a></li>
+                </ul>
+              </li>
+            </ul>
+                <input type="text" class="button1 full-width" placeholder="Room Name" id="room-input" v-model="pendingRoom" @keyup.enter="joinRoom()">
+                <input class="button1 full-width" type="submit" v-on:click="joinRoom()" value="Tilslut rum">
+          </div>
+        </div>
+      </nav>
+<!-- Console Modal -->
+<div class="modal fade" id="consoleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Console</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="notification-list" ref="notificationContainer">
+          
+          <div class="notification full-width" v-for="notification in notifications">
+            <div class="notification-timestamp">{{ notification.timestamp }} > {{ notification.message }}</div>
+            <div class="notification-message"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Keypair Modal -->
+<div class="modal fade" id="keyModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Nøgler</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          
+          <p>Her kan du finde de forskellige nøgler, der oprettets når du chatter!</p>
+          <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+            Dine nøgler
+          </a>
+        </p>
+        <div class="collapse" id="collapseExample">
+          <div class="card card-body">
+            <h2>DIN PUBLIC KEY</h2>
+            <div class="key green" v-if="originPublicKey">
+              <h3 style="color: red; font-size: 10px;">TRUNCATED IDENTIFIER - {{ getKeySnippet(originPublicKey) }}</h3>
+              <p>{{ originPublicKey }}</p>
+            </div>
+          </div>
+        </div>
+        <a class="btn btn-primary" data-bs-toggle="collapse" href="#c2" role="button" aria-expanded="false" aria-controls="collapseExample">
+          Modtagers nøgler
+        </a>
+      </p>
+      <div class="collapse" id="c2">
+        <div class="card card-body">
+          <h2>MODTAGERS PUBLIC KEY</h2>
+          <h2 v-else>Venter på anden bruger tilslutter...</h2>
+        <div class="key red" v-if="destinationPublicKey">
+          
+          <h3 style="color: red; font-size: 10px;">TRUNCATED IDENTIFIER - {{ getKeySnippet(destinationPublicKey) }}</h3>
+          <p>{{ destinationPublicKey }}</p>
+          
+        </div>
+        </div>
+      </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="alert alert-danger test2" role="alert">
+  Alle beskeder slettes, når vinduet lukkes!
+</div>
+      <div class="chat-container full-width" ref="chatContainer">
+        <div class="title-header">
+        </div>
+        <div class="message-list">
+          <div class="message full-width" v-for="message in messages">
+            <p class="besked">
+              <span v-bind:class="(message.sender == originPublicKey) ? 'green' : 'red'">{{ getKeySnippet(message.sender) }}</span>
+               >> {{ message.text }} 
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="info-container full-width">
+      
+        
+      
+      <div class="divider"></div>
+      <div class="flex-fill"></div>
+      <div class="divider"></div>
+      <div class="keys full-width">
+        <div class="keypair-loader full-width" v-else>
+          <div class="center-x loader"></div>
+          <h2 class="center-text">Generating Keypair...</h2>
+        </div>
+      </div>
+      </div>
+      <div class="bottom-bar full-width">
+         <input class="message-input" style="width: 100%;" type="text" placeholder="Skriv en besked" v-model="draft" @keyup.enter="sendMessage()">
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.4.1/vue.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.slim.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/immutable/3.8.1/immutable.min.js"></script>
+    <script src="/page.js"></script>
+  </body>
+</html>
